@@ -16,7 +16,7 @@ public class LoadMap extends JFrame {
 
         MapSetup gameMap = new MapSetup();
         add(gameMap);
-        setSize(389,412);
+        setSize(685,730);
         setVisible(true);
 
     }

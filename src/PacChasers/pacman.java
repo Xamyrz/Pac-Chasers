@@ -10,7 +10,7 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 
 public class pacman implements KeyListener, ActionListener {
-    Timer t = new Timer(7, this); //speed of the pacman the higher the slower
+    Timer t = new Timer(10, this); //speed of the pacman the higher the slower
     boolean positionSet = false;
     int x = 0;
     int y = 0;

@@ -12,7 +12,9 @@ import java.util.Scanner;
 import java.util.List;
 
 public class MapSetup extends JPanel {
+    final int TILE_SIZE_PX = 24;
     List<int[]> wallList = new ArrayList<int[]>();
+    ArrayList<ArrayList<String>> map = new ArrayList<ArrayList<String>>();
     //List<int[]> foodList = new ArrayList<int[]>();
     ArrayList<food> foodList = new ArrayList<food>();
     boolean wallSet = false;
@@ -44,12 +46,14 @@ public class MapSetup extends JPanel {
                 repaint();
             }
         };
-        repaintT = new Timer(10,repaintA);
+        repaintT = new Timer(7,repaintA);
         repaintT.start();
     }
 
     @Override
     public void paintComponent(Graphics g) {
+        int lineIndex = 0;
+        int charIndex = 0;
         int x=0,y=0;
         super.paintComponents(g);
         g.setColor(getBackground());
@@ -60,31 +64,22 @@ public class MapSetup extends JPanel {
             Scanner scLine = new Scanner(scanner.nextLine());
             while(scLine.hasNext()) {
                 String c = scLine.next();
-                //System.out.println(x + ": xW Y: " + y);
-                //System.out.println(c);
-                //g.drawString(c, x, y);
 
                 //draw walls
                 if(c.equals("x")){
                     g.setColor(Color.BLUE);
-                    g.fillRect(x,y,22,22);
-                    //sets the walls
-                    if(!wallSet){
-                        wallList.add(new int[] {x+11, y+11});
-                    }
+                    g.fillRect(x,y,TILE_SIZE_PX,TILE_SIZE_PX);
+                }
+                if(!wallSet){
+                    map.add(new ArrayList<>());
+                    map.get(lineIndex).add(c);
+                    map.get(lineIndex).set(charIndex, c);
                 }
                 if(c.equals("*")){
                     if(!foodSet){
                         foodList.add(new food(x,y, false));
                         foodLeft++;
-                        //foodList.add(new int[] {x+11, y+11, 1}); //sets the food locations and a boolean of INT if visible
                     }
-//                    else {
-//                        for (food food : foodList) {
-//                            if (!food.eaten)
-//                                g.setColor(Color.yellow);
-//                                g.fillOval(food.x + 8, food.y + 8, 6, 6);
-//                        }
                 }
                 //sets position of pacman when found on the map file
                 if(c.equals("p") && !pac.positionSet){
@@ -97,30 +92,36 @@ public class MapSetup extends JPanel {
                     gh.x=x;
                     gh.y=y;
                 }
-                x += 22;
+
+
+                charIndex++;
+                x += TILE_SIZE_PX;
 
             }
+            //System.out.println(map.get(0).size());
+            charIndex=0;
+            lineIndex++;
             x = 0;
-            y += 22;
+            y += TILE_SIZE_PX;
         }
         foodSet = true;
+        wallSet = true;
         for (food food : foodList) {
             if (!food.eaten) {
                 g.setColor(Color.yellow);
                 g.fillOval(food.x + 8, food.y + 8, 6, 6);
             }
         }
-        wallSet = true;
         //checks the distance between the walls and the pacman to detect colision
-        for(int i = 0; i< wallList.size(); i++){
-            double a = pac.x+12 - wallList.get(i)[0];
-            double b = pac.y+12 - wallList.get(i)[1];
-                if(Math.sqrt(a*a+b*b) < 23){
-                    //System.out.println("hit");
-                    pac.velX = 0;
-                    pac.velY = 0;
-                }
-        }
+//        for(int i = 0; i< wallList.size(); i++){
+//            double a = pac.x+12 - wallList.get(i)[0];
+//            double b = pac.y+12 - wallList.get(i)[1];
+//            if(Math.sqrt(a*a+b*b) < 23){
+//                //System.out.println("hit");
+//                pac.velX = 0;
+//                pac.velY = 0;
+//            }
+//        }
 
         //check the distance between the pacman and the food
         for(int i=0 ; i<foodList.size() ; i++){
@@ -137,6 +138,86 @@ public class MapSetup extends JPanel {
         g.setFont(myFont);
         g.setColor(Color.ORANGE);
         g.drawString("Food left: "+ foodLeft, 18, 18);
+
+        //Pacman Collisions
+        if(pac.velX == 1){
+//            System.out.println("pac.y+TILE_SIZE_PX: "+ Math.floorDiv(pac.y, TILE_SIZE_PX));
+//            System.out.println("pac.y/TILE_SIZE_PX: "+ (int) Math.ceil((double) pac.y / TILE_SIZE_PX));
+            if(map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x") ||
+                    map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                pac.velX=0;
+                pac.velY=0;
+
+                pac.x = pac.x/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+        }
+        else if(pac.velX == -1){
+            if(map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x") ||
+                    map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x")){
+                pac.velX=0;
+                pac.velY=0;
+                System.out.println("hit");
+                pac.x = (pac.x+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+
+        }
+        else if(pac.velY == 1){
+            if(map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(pac.x,TILE_SIZE_PX)).equals("x") ||
+                    map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x/TILE_SIZE_PX)).equals("x")){
+                pac.velX=0;
+                pac.velY=0;
+
+                pac.y = pac.y/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+        }
+        else if(pac.velY == -1){
+            if(map.get((pac.y)/TILE_SIZE_PX).get(Math.floorDiv(pac.x, TILE_SIZE_PX)).equals("x") ||
+                    map.get((pac.y)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x/TILE_SIZE_PX)).equals("x")){
+                pac.velX=0;
+                pac.velY=0;
+                System.out.println("hit");
+                pac.y = (pac.y+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+        }
+
+        //Ghost Collisions
+        if(gh.velX == 1){
+            if(map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x") ||
+                    map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                gh.velX=0;
+                gh.velY=0;
+
+                gh.x = gh.x/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+        }
+        else if(gh.velX == -1){
+            if(map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x") ||
+                    map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x")){
+                gh.velX=0;
+                gh.velY=0;
+                System.out.println("hit");
+                gh.x = (gh.x+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+
+        }
+        else if(gh.velY == 1){
+            if(map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(gh.x,TILE_SIZE_PX)).equals("x") ||
+                    map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x/TILE_SIZE_PX)).equals("x")){
+                gh.velX=0;
+                gh.velY=0;
+
+                gh.y = gh.y/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+        }
+        else if(gh.velY == -1){
+            if(map.get((gh.y)/TILE_SIZE_PX).get(Math.floorDiv(gh.x, TILE_SIZE_PX)).equals("x") ||
+                    map.get((gh.y)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x/TILE_SIZE_PX)).equals("x")){
+                gh.velX=0;
+                gh.velY=0;
+                System.out.println("hit");
+                gh.y = (gh.y+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+        }
 
         g.drawImage(gh.getImage(), gh.x,gh.y, null);
         if(pac.pacFacing == 0){

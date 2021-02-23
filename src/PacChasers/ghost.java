@@ -10,7 +10,7 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 
 public class ghost implements KeyListener, ActionListener {
-    Timer t = new Timer(10, this); //speed of the ghost the higher the slower
+    Timer t = new Timer(13, this); //speed of the ghost the higher the slower
     boolean positionSet = false;
     int x = 0;
     int y = 0;
