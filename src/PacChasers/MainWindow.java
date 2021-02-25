@@ -18,7 +18,7 @@ public class MainWindow extends JFrame{
         java.net.URL imgURL = getClass().getResource("/res/Menu/logo.png");
         ImageIcon Logo = new ImageIcon(imgURL);
         Image mapImage = Logo.getImage();
-        Image scaledImage = mapImage.getScaledInstance(400,300, Image.SCALE_SMOOTH);
+        Image scaledImage = mapImage.getScaledInstance(399,300, Image.SCALE_SMOOTH);
         Logo = new ImageIcon(scaledImage);
 
         JLabel StartMenuImage = new JLabel(Logo);
