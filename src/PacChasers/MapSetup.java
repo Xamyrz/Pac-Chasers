@@ -12,6 +12,10 @@ import java.util.Scanner;
 import java.util.List;
 
 public class MapSetup extends JPanel {
+    private volatile boolean runningGhBall = true;
+    public Thread Tgh;
+    private volatile boolean runningPacBall = true;
+    public Thread Tpac;
     final int TILE_SIZE_PX = 24;
     List<int[]> wallList = new ArrayList<int[]>();
     ArrayList<ArrayList<String>> map = new ArrayList<ArrayList<String>>();
@@ -27,6 +31,7 @@ public class MapSetup extends JPanel {
     Timer repaintT;
     ActionListener repaintA;
     Sounds sfx = new Sounds();
+
 
     boolean ghostWin = false;
     boolean pacmanWin = false;
@@ -161,27 +166,39 @@ public class MapSetup extends JPanel {
                 foodLeft--;
             }else if(dp && !foodList.get(i).eaten) {
                 foodList.get(i).eaten = true;
-                new Thread(new Runnable() {
+                runningPacBall = true;
+                Tpac = new Thread(new Runnable() {
                     public void run() {
-                        try {
-                            sfx.music.stop();
-                            sfx.effect.loop(Clip.LOOP_CONTINUOUSLY);
-                            sfx.effect.start();
-                            gh.edible = true;
-                            Thread.sleep(10000);
-                            gh.edible = false;
-                            sfx.effect.stop();
-                            sfx.music.loop(Clip.LOOP_CONTINUOUSLY);
-                            if(ghostWin || pacmanWin){
+                        while (runningPacBall) {
+                            try {
                                 sfx.music.stop();
-                            }else{
-                                sfx.music.start();
+                                sfx.effect.loop(Clip.LOOP_CONTINUOUSLY);
+                                sfx.effect.start();
+                                gh.edible = true;
+                                Thread.sleep(10000);
+                                gh.edible = false;
+                                sfx.effect.stop();
+                                sfx.music.loop(Clip.LOOP_CONTINUOUSLY);
+                                if (ghostWin || pacmanWin) {
+                                    sfx.music.stop();
+                                } else {
+                                    sfx.music.start();
+                                }
+                                stopThread();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                                if (!runningPacBall){
+                                    break;
+                                }
                             }
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
                         }
                     }
-                }).start();
+                    public void stopThread() {
+                        runningPacBall = false;
+                        Tpac.interrupt();
+                    }
+                });
+                Tpac.start();
                 foodLeft--;
             }
 
@@ -190,44 +207,60 @@ public class MapSetup extends JPanel {
             boolean dg = Math.sqrt(ag * ag + bg * bg) < 10;
             if(dg && !foodList.get(i).eaten && foodList.get(i).foodBall){
                 foodList.get(i).eaten = true;
-                new Thread(new Runnable() {
+                runningGhBall = true;
+                Tgh = new Thread(new Runnable() {
                     public void run() {
-                        try {
-                            sfx.music.stop();
-                            sfx.effect.loop(Clip.LOOP_CONTINUOUSLY);
-                            sfx.effect.start();
-                            gh.t.stop();
-                            int gX = gh.x;
-                            int gY = gh.y;
-                            int gvx = gh.velX;
-                            int gvy = gh.velY;
-                            gh = new ghost(7);
-                            addKeyListener(gh);
-                            gh.x = gX;
-                            gh.y = gY;
-                            gh.velX = gvx;
-                            gh.velY = gvy;
-                            gh.gotBall = true;
-                            Thread.sleep(10000);
-                            gX = gh.x;
-                            gY = gh.y;
-                            gvx = gh.velX;
-                            gvy = gh.velY;
-                            gh = new ghost(13);
-                            addKeyListener(gh);
-                            gh.x = gX;
-                            gh.y = gY;
-                            gh.velX = gvx;
-                            gh.velY = gvy;
-                            gh.gotBall = false;
-                            sfx.effect.stop();
-                            sfx.music.loop(Clip.LOOP_CONTINUOUSLY);
-                            sfx.music.start();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        while (runningGhBall) {
+                            try {
+                                sfx.music.stop();
+                                sfx.effect.loop(Clip.LOOP_CONTINUOUSLY);
+                                sfx.effect.start();
+                                gh.t.stop();
+                                int gX = gh.x;
+                                int gY = gh.y;
+                                int gvx = gh.velX;
+                                int gvy = gh.velY;
+                                gh = new ghost(7);
+                                addKeyListener(gh);
+                                gh.x = gX;
+                                gh.y = gY;
+                                gh.velX = gvx;
+                                gh.velY = gvy;
+                                gh.gotBall = true;
+                                Thread.sleep(10000);
+                                gX = gh.x;
+                                gY = gh.y;
+                                gvx = gh.velX;
+                                gvy = gh.velY;
+                                gh = new ghost(13);
+                                addKeyListener(gh);
+                                gh.x = gX;
+                                gh.y = gY;
+                                gh.velX = gvx;
+                                gh.velY = gvy;
+                                gh.gotBall = false;
+                                sfx.effect.stop();
+                                sfx.music.loop(Clip.LOOP_CONTINUOUSLY);
+                                sfx.music.start();
+                                if (ghostWin || pacmanWin) {
+                                    sfx.music.stop();
+                                } else {
+                                    sfx.music.start();
+                                }
+                                stopThread();
+                            } catch (InterruptedException e) {
+                                if(!runningGhBall){
+                                    break;
+                                }
+                            }
                         }
                     }
-                }).start();
+                    public void stopThread() {
+                        runningGhBall = false;
+                        Tgh.interrupt();
+                    }
+                });
+                Tgh.start();
                 foodLeft--;
             }
         }
@@ -262,7 +295,7 @@ public class MapSetup extends JPanel {
             sfx.music.stop();
         }
         //pacman wins
-        if(((gh.edible && d) || pacmanWin) && !ghostWin){
+        if((((gh.edible && d) || pacmanWin) && !ghostWin) || foodLeft==0){
             Font ghWinFont = null;
             try {
                 ghWinFont = Font.createFont(Font.TRUETYPE_FONT, this.getClass().getResourceAsStream("/res/font/04b30.ttf")).deriveFont(24f);
@@ -286,76 +319,208 @@ public class MapSetup extends JPanel {
 
         //Pacman wall Collisions
         if(pac.velX == 1){
-//            System.out.println("pac.y+TILE_SIZE_PX: "+ Math.floorDiv(pac.y, TILE_SIZE_PX));
-//            System.out.println("pac.y/TILE_SIZE_PX: "+ (int) Math.ceil((double) pac.y / TILE_SIZE_PX));
-            if(map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x") ||
+            if(pac.turning == -1 && map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x") ||
                     map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
                 pac.velX=0;
                 pac.velY=0;
 
                 pac.x = pac.x/TILE_SIZE_PX*TILE_SIZE_PX;
             }
-        }
-        else if(pac.velX == -1){
-            if(map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x") ||
-                    map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x")){
-                pac.velX=0;
-                pac.velY=0;
-                System.out.println("hit");
-                pac.x = (pac.x+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
+            if(pac.turning == 0){
+                if(!map.get((pac.y-TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(pac.x,TILE_SIZE_PX)).equals("x")){
+                    pac.up();
+                }
+            }else if(pac.turning == 1){
+                if(!map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(pac.x, TILE_SIZE_PX)).equals("x")){
+                    pac.down();
+                }
+            }else if(pac.turning == 2){
+                if(!map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x")){
+                    pac.left();
+                }
             }
 
         }
+        else if(pac.velX == -1){
+            if(pac.turning == -1 && map.get((int) Math.ceil((double) pac.y / TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x") ||
+                    map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x")){
+                pac.velX=0;
+                pac.velY=0;
+                pac.x = (pac.x+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
+            }
+
+
+            if(pac.turning == 0){
+                if(!map.get((pac.y-TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x / TILE_SIZE_PX)).equals("x")){
+                    pac.up();
+                }
+            }else if(pac.turning == 1){
+                if(!map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x / TILE_SIZE_PX)).equals("x")){
+                    pac.down();
+                }
+            }else if(pac.turning == 3){
+                if(!map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get(pac.x/TILE_SIZE_PX).equals("x")){
+                    pac.right();
+                }
+            }
+            //
+
+        }
         else if(pac.velY == 1){
-            if(map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(pac.x,TILE_SIZE_PX)).equals("x") ||
+            if(pac.turning == -1 && map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(pac.x,TILE_SIZE_PX)).equals("x") ||
                     map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x/TILE_SIZE_PX)).equals("x")){
                 pac.velX=0;
                 pac.velY=0;
                 pac.y = pac.y/TILE_SIZE_PX*TILE_SIZE_PX;
             }
+
+            if(pac.turning == 3){
+                if(!map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    pac.right();
+                }
+            }else if(pac.turning == 2){
+                if(!map.get(Math.floorDiv(pac.y, TILE_SIZE_PX)).get((pac.x-TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    pac.left();
+                }
+            }else if(pac.turning == 0){
+                if(!map.get((pac.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x/TILE_SIZE_PX)).equals("x")){
+                    pac.up();
+                }
+            }
+            //
         }
         else if(pac.velY == -1){
-            if(map.get((pac.y)/TILE_SIZE_PX).get(Math.floorDiv(pac.x, TILE_SIZE_PX)).equals("x") ||
+            if(pac.turning == -1 && map.get((pac.y)/TILE_SIZE_PX).get(Math.floorDiv(pac.x, TILE_SIZE_PX)).equals("x") ||
                     map.get((pac.y)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x/TILE_SIZE_PX)).equals("x")){
                 pac.velX=0;
                 pac.velY=0;
                 pac.y = (pac.y+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
             }
+
+            if(pac.turning == 3){
+                if(!map.get((int) Math.ceil((double)pac.y / TILE_SIZE_PX)).get((pac.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    pac.right();
+                }
+            }else if(pac.turning == 2){
+                if(!map.get((int) Math.ceil((double)pac.y / TILE_SIZE_PX)).get((pac.x-TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    pac.left();
+                }
+            }else if(pac.turning == 1){
+                if(!map.get((pac.y)/TILE_SIZE_PX).get((int) Math.ceil((double) pac.x/TILE_SIZE_PX)).equals("x")){
+                    pac.down();
+                }
+            }
+            //
+        }
+        if(pac.turning != -1 && (pac.velX==0 && pac.velY==0)){
+            if(pac.turning == 0) pac.up();
+            if(pac.turning == 1) pac.down();
+            if(pac.turning == 2) pac.left();
+            if(pac.turning == 3) pac.right();
         }
 
         //Ghost wall Collisions
         if(gh.velX == 1){
-            if(map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x") ||
+            if(gh.turning == -1 && map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x") ||
                     map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
                 gh.velX=0;
                 gh.velY=0;
+
                 gh.x = gh.x/TILE_SIZE_PX*TILE_SIZE_PX;
             }
+            if(gh.turning == 0){
+                if(!map.get((gh.y-TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(gh.x,TILE_SIZE_PX)).equals("x")){
+                    gh.up();
+                }
+            }else if(gh.turning == 1){
+                if(!map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(gh.x, TILE_SIZE_PX)).equals("x")){
+                    gh.down();
+                }
+            }else if(gh.turning == 2){
+                if(!map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x")){
+                    gh.left();
+                }
+            }
+//            System.out.println("gh.y+TILE_SIZE_PX: "+ Math.floorDiv(gh.y, TILE_SIZE_PX));
+//            System.out.println("gh.y/TILE_SIZE_PX: "+ (int) Math.ceil((double) gh.y / TILE_SIZE_PX));
+
         }
         else if(gh.velX == -1){
-            if(map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x") ||
+            if(gh.turning == -1 && map.get((int) Math.ceil((double) gh.y / TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x") ||
                     map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x")){
                 gh.velX=0;
                 gh.velY=0;
                 gh.x = (gh.x+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
             }
 
+
+            if(gh.turning == 0){
+                if(!map.get((gh.y-TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x / TILE_SIZE_PX)).equals("x")){
+                    gh.up();
+                }
+            }else if(gh.turning == 1){
+                if(!map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x / TILE_SIZE_PX)).equals("x")){
+                    gh.down();
+                }
+            }else if(gh.turning == 3){
+                if(!map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get(gh.x/TILE_SIZE_PX).equals("x")){
+                    gh.right();
+                }
+            }
+            //
+
         }
         else if(gh.velY == 1){
-            if(map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(gh.x,TILE_SIZE_PX)).equals("x") ||
+            if(gh.turning == -1 && map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get(Math.floorDiv(gh.x,TILE_SIZE_PX)).equals("x") ||
                     map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x/TILE_SIZE_PX)).equals("x")){
                 gh.velX=0;
                 gh.velY=0;
                 gh.y = gh.y/TILE_SIZE_PX*TILE_SIZE_PX;
             }
+
+            if(gh.turning == 3){
+                if(!map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    gh.right();
+                }
+            }else if(gh.turning == 2){
+                if(!map.get(Math.floorDiv(gh.y, TILE_SIZE_PX)).get((gh.x-TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    gh.left();
+                }
+            }else if(gh.turning == 0){
+                if(!map.get((gh.y+TILE_SIZE_PX)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x/TILE_SIZE_PX)).equals("x")){
+                    gh.up();
+                }
+            }
+            //
         }
         else if(gh.velY == -1){
-            if(map.get((gh.y)/TILE_SIZE_PX).get(Math.floorDiv(gh.x, TILE_SIZE_PX)).equals("x") ||
+            if(gh.turning == -1 && map.get((gh.y)/TILE_SIZE_PX).get(Math.floorDiv(gh.x, TILE_SIZE_PX)).equals("x") ||
                     map.get((gh.y)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x/TILE_SIZE_PX)).equals("x")){
                 gh.velX=0;
                 gh.velY=0;
                 gh.y = (gh.y+TILE_SIZE_PX)/TILE_SIZE_PX*TILE_SIZE_PX;
             }
+
+            if(gh.turning == 3){
+                if(!map.get((int) Math.ceil((double)gh.y / TILE_SIZE_PX)).get((gh.x+TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    gh.right();
+                }
+            }else if(gh.turning == 2){
+                if(!map.get((int) Math.ceil((double)gh.y / TILE_SIZE_PX)).get((gh.x-TILE_SIZE_PX)/TILE_SIZE_PX).equals("x")){
+                    gh.left();
+                }
+            }else if(gh.turning == 1){
+                if(!map.get((gh.y)/TILE_SIZE_PX).get((int) Math.ceil((double) gh.x/TILE_SIZE_PX)).equals("x")){
+                    gh.down();
+                }
+            }
+            //
+        }
+        if(gh.turning != -1 && (gh.velX==0 && gh.velY==0)){
+            if(gh.turning == 0) gh.up();
+            if(gh.turning == 1) gh.down();
+            if(gh.turning == 2) gh.left();
+            if(gh.turning == 3) gh.right();
         }
 
         g.drawImage(gh.getImage(), gh.x,gh.y, null);

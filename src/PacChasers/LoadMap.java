@@ -26,7 +26,6 @@ public class LoadMap extends JFrame {
                     while(!gameMap.ghostWin && !gameMap.pacmanWin){
                         Thread.sleep(1000);
                     }
-                    System.out.println("ended");
                     Thread.sleep(5000);
                     dispose();
                     gameMap.sfx.effect.stop();

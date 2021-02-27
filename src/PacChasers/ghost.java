@@ -20,6 +20,8 @@ public class ghost implements KeyListener, ActionListener {
     int currGhIncrement = 1;
     boolean gotBall = false;
     boolean edible = false;
+    int turning = -1;
+    boolean movingSet = false;
 
     Image[] ghostImage = new Image[12];
 
@@ -27,23 +29,24 @@ public class ghost implements KeyListener, ActionListener {
         t = new Timer(speed, this); //speed of the ghost the higher the slower
         t.start();
         try {
-            ghostImage[0] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost1.png"));
-            ghostImage[1] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost1-2.png"));
-            ghostImage[2] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost2.png"));
-            ghostImage[3] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost2-2.png"));
-            ghostImage[4] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost3.png"));
-            ghostImage[5] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost3-2.png"));
-            ghostImage[6] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost4.png"));
-            ghostImage[7] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost4-2.png"));
-            ghostImage[8] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost5.png"));
-            ghostImage[9] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost5-2.png"));
-            ghostImage[10] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost6.png"));
-            ghostImage[11] = ImageIO.read(this.getClass().getResource("/res/ghost/ghost6-2.png"));
+            ghostImage[0] = ImageIO.read(getClass().getResource("/res/ghost/ghost1.png"));
+            ghostImage[1] = ImageIO.read(getClass().getResource("/res/ghost/ghost1-2.png"));
+            ghostImage[2] = ImageIO.read(getClass().getResource("/res/ghost/ghost2.png"));
+            ghostImage[3] = ImageIO.read(getClass().getResource("/res/ghost/ghost2-2.png"));
+            ghostImage[4] = ImageIO.read(getClass().getResource("/res/ghost/ghost3.png"));
+            ghostImage[5] = ImageIO.read(getClass().getResource("/res/ghost/ghost3-2.png"));
+            ghostImage[6] = ImageIO.read(getClass().getResource("/res/ghost/ghost4.png"));
+            ghostImage[7] = ImageIO.read(getClass().getResource("/res/ghost/ghost4-2.png"));
+            ghostImage[8] = ImageIO.read(getClass().getResource("/res/ghost/ghost5.png"));
+            ghostImage[9] = ImageIO.read(getClass().getResource("/res/ghost/ghost5-2.png"));
+            ghostImage[10] = ImageIO.read(getClass().getResource("/res/ghost/ghost6.png"));
+            ghostImage[11] = ImageIO.read(getClass().getResource("/res/ghost/ghost6-2.png"));
         } catch (IOException e) {
-            System.err.println("couldnt find pacman resources");
+            System.err.println("couldnt find ghost resources");
         }
         ActionListener ghCurImg = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
+                System.out.println(edible);
                 if(!gotBall && !edible) {
                     if(currGh % 2 != 0) currGh=0;
                     if(currGh == 0) currGhIncrement = 2;
@@ -56,13 +59,13 @@ public class ghost implements KeyListener, ActionListener {
                 if(edible){
                     if(currGh == 0) currGhIncrement = 1;
                     if(currGh == 11) currGhIncrement = -1;
-
                 }
                 if(currGh == 10 && currGhIncrement == 2){
                     currGh++;
                     currGhIncrement = -1;
                 }else{
                     currGh += currGhIncrement;
+                    if(currGh < 0 || currGh > 11) currGh=0;
                 }
 
             }
@@ -99,21 +102,25 @@ public class ghost implements KeyListener, ActionListener {
     }
 
     public void up(){
+        turning = -1;
         velY = -1;
         velX = 0;
     }
 
     public void down(){
+        turning = -1;
         velY = 1;
         velX = 0;
     }
 
     public void right(){
+        turning = -1;
         velY = 0;
         velX = 1;
     }
 
     public void left(){
+        turning = -1;
         velY = 0;
         velX = -1;
     }
@@ -121,16 +128,24 @@ public class ghost implements KeyListener, ActionListener {
     public void keyPressed(KeyEvent e) {
         int keycode = e.getKeyCode();
         if(keycode == KeyEvent.VK_UP){
-            up();
+            if(movingSet) turning=0;
+            else up();
+            movingSet = true;
         }
         if(keycode == KeyEvent.VK_DOWN){
-            down();
+            if(movingSet) turning=1;
+            else down();
+            movingSet = true;
         }
         if(keycode == KeyEvent.VK_LEFT){
-            left();
+            if(movingSet)turning=2;
+            else left();
+            movingSet = true;
         }
         if(keycode == KeyEvent.VK_RIGHT){
-            right();
+            if(movingSet)turning=3;
+            else right();
+            movingSet = true;
         }
     }
 }

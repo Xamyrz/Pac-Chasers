@@ -57,7 +57,6 @@ public class MainWindow extends JFrame{
             }
 
             public void mouseClicked(MouseEvent e){
-                System.out.println("done");
                 LoadMap board = new LoadMap();
                 dispose();
             }

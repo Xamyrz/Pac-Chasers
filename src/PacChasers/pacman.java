@@ -19,6 +19,8 @@ public class pacman implements KeyListener, ActionListener {
     int currPac = 0;
     int currpacIncrement = 1;
     int pacFacing = 2;
+    int turning = -1;
+    boolean movingSet = false;
 
     Image[] pacImage = new Image[6];
 
@@ -74,42 +76,54 @@ public class pacman implements KeyListener, ActionListener {
 
     public void up(){
         pacFacing = 0;
+        turning = -1;
         velY = -1;
         velX = 0;
     }
 
     public void down(){
         pacFacing = 1;
+        turning = -1;
         velY = 1;
         velX = 0;
     }
 
     public void right(){
         pacFacing = 2;
+        turning = -1;
         velY = 0;
         velX = 1;
     }
 
     public void left(){
         pacFacing = 3;
+        turning = -1;
         velY = 0;
         velX = -1;
     }
 
     public void keyPressed(KeyEvent e) {
         int keycode = e.getKeyCode();
-        System.out.println(keycode);
         if(keycode == KeyEvent.VK_W){
-            up();
+            if(movingSet) turning=0;
+            else up();
+            movingSet = true;
+
         }
         if(keycode == KeyEvent.VK_S){
-            down();
+            if(movingSet) turning=1;
+            else down();
+            movingSet = true;
         }
         if(keycode == KeyEvent.VK_A){
-            left();
+            if(movingSet)turning=2;
+            else left();
+            movingSet = true;
         }
         if(keycode == KeyEvent.VK_D){
-            right();
+            if(movingSet)turning=3;
+            else right();
+            movingSet = true;
         }
     }
 }
