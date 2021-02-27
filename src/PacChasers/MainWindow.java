@@ -1,3 +1,5 @@
+//Kamil Michalski
+//18469806
 package PacChasers;
 
 import javax.swing.*;
@@ -57,38 +59,39 @@ public class MainWindow extends JFrame{
             }
 
             public void mouseClicked(MouseEvent e){
-                LoadMap board = new LoadMap();
+                LoadMap board = new LoadMap("/res/map/map.txt");
                 dispose();
             }
         });
 
-        JButton LevelsButton = new JButton(" Levels");
-        LevelsButton.setFont(myFont);
-        LevelsButton.setBorder(null);
-        LevelsButton.setBorderPainted(false);
-        LevelsButton.setContentAreaFilled(false);
-        LevelsButton.setForeground(Color.ORANGE);
+        JButton TurorialButton = new JButton(" Tutorial");
+        TurorialButton.setFont(myFont);
+        TurorialButton.setBorder(null);
+        TurorialButton.setBorderPainted(false);
+        TurorialButton.setContentAreaFilled(false);
+        TurorialButton.setForeground(Color.ORANGE);
 
 
         //StartButton Mouse Listeners
-        LevelsButton.addMouseListener(new MouseAdapter() {
+        TurorialButton.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                LevelsButton.setForeground(Color.GRAY);
+                TurorialButton.setForeground(Color.GRAY);
             }
 
             public void mouseExited(MouseEvent e) {
-                LevelsButton.setForeground(Color.ORANGE);
+                TurorialButton.setForeground(Color.ORANGE);
             }
 
             public void mouseClicked(MouseEvent e){
-                System.out.println("done");
+                LoadMap board = new LoadMap("/res/map/tutorialmap.txt");
+                dispose();
             }
         });
 
 
 
         ButtonPanel.add(StartButton);
-        ButtonPanel.add(LevelsButton);
+        ButtonPanel.add(TurorialButton);
         add(ButtonPanel, BorderLayout.SOUTH);
 
         pack();

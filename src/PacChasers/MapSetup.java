@@ -1,4 +1,10 @@
+//Kamil Michalski
+//18469806
 package PacChasers;
+
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 import javax.sound.sampled.*;
 import javax.swing.*;
@@ -12,6 +18,8 @@ import java.util.Scanner;
 import java.util.List;
 
 public class MapSetup extends JPanel {
+    private Socket socket;
+
     private volatile boolean runningGhBall = true;
     public Thread Tgh;
     private volatile boolean runningPacBall = true;
@@ -26,8 +34,8 @@ public class MapSetup extends JPanel {
     int foodLeft = 0;
     Font myFont;
     Scanner scanner;
-    pacman pac = new pacman();
-    ghost gh = new ghost(13);
+    pacman pac;
+    ghost gh;
     Timer repaintT;
     ActionListener repaintA;
     Sounds sfx = new Sounds();
@@ -35,8 +43,14 @@ public class MapSetup extends JPanel {
 
     boolean ghostWin = false;
     boolean pacmanWin = false;
-    public MapSetup() {
-
+    public MapSetup(String mapt) {
+        try {
+            BasicExample();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        pac = new pacman(socket);
+        gh = new ghost(socket);
         setFocusable(true);
         addKeyListener(pac);
         addKeyListener(gh);
@@ -56,7 +70,7 @@ public class MapSetup extends JPanel {
         int lineIndex = 0;
         int charIndex = 0;
         int x=0,y=0;
-        InputStream in = getClass().getResourceAsStream("/res/map/map.txt");
+        InputStream in = getClass().getResourceAsStream(mapt);
         scanner = new Scanner(in);
         while(scanner.hasNextLine()) {
             Scanner scLine = new Scanner(scanner.nextLine());
@@ -215,29 +229,10 @@ public class MapSetup extends JPanel {
                                 sfx.music.stop();
                                 sfx.effect.loop(Clip.LOOP_CONTINUOUSLY);
                                 sfx.effect.start();
-                                gh.t.stop();
-                                int gX = gh.x;
-                                int gY = gh.y;
-                                int gvx = gh.velX;
-                                int gvy = gh.velY;
-                                gh = new ghost(7);
-                                addKeyListener(gh);
-                                gh.x = gX;
-                                gh.y = gY;
-                                gh.velX = gvx;
-                                gh.velY = gvy;
+                                gh.speed = 7;
                                 gh.gotBall = true;
                                 Thread.sleep(10000);
-                                gX = gh.x;
-                                gY = gh.y;
-                                gvx = gh.velX;
-                                gvy = gh.velY;
-                                gh = new ghost(13);
-                                addKeyListener(gh);
-                                gh.x = gX;
-                                gh.y = gY;
-                                gh.velX = gvx;
-                                gh.velY = gvy;
+                                gh.speed = 13;
                                 gh.gotBall = false;
                                 sfx.effect.stop();
                                 sfx.music.loop(Clip.LOOP_CONTINUOUSLY);
@@ -269,6 +264,11 @@ public class MapSetup extends JPanel {
         g.setColor(Color.ORANGE);
         g.drawString("Food left: "+ foodLeft, 18, 18);
 
+        g.drawString("PACMAN: WASD", 58, 690);
+
+        g.setColor(Color.CYAN);
+        g.drawString("GHOST: ARROW KEYS", 440, 690);
+
         //distance between pacman and ghost
         double a = gh.x - pac.x;
         double b = gh.y - pac.y;
@@ -290,10 +290,17 @@ public class MapSetup extends JPanel {
             pac.velX=0;
             pac.velY=0;
             removeKeyListener(pac);
+            if(!ghostWin) socket.emit("ghwin");
             ghostWin = true;
             sfx.effect.stop();
             sfx.music.stop();
         }
+        socket.on("ghwin", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                ghostWin = true;
+            }
+        });
         //pacman wins
         if((((gh.edible && d) || pacmanWin) && !ghostWin) || foodLeft==0){
             Font ghWinFont = null;
@@ -311,10 +318,17 @@ public class MapSetup extends JPanel {
             pac.velX=0;
             pac.velY=0;
             removeKeyListener(pac);
+            if(!pacmanWin) socket.emit("pacwin");
             pacmanWin = true;
             sfx.effect.stop();
             sfx.music.stop();
         }
+        socket.on("pacwin", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                pacmanWin = true;
+            }
+        });
 
 
         //Pacman wall Collisions
@@ -547,5 +561,10 @@ public class MapSetup extends JPanel {
             //pac.x and pac.y needs to be inverted after rotation
             g2d.drawImage(pac.getImage(), -pac.x, -pac.y , null);
         }
+    }
+    public void BasicExample() throws Exception {
+        socket = IO.socket("https://pacchaser-server.herokuapp.com");
+        //socket = IO.socket("http://localhost:2731");
+        socket.connect();
     }
 }

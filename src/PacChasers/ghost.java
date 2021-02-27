@@ -1,3 +1,5 @@
+//Kamil Michalski
+//18469806
 package PacChasers;
 
 import javax.imageio.ImageIO;
@@ -8,8 +10,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+import org.json.JSONObject;
 
 public class ghost implements KeyListener, ActionListener {
+    private Socket socket;
     Timer t;
     boolean positionSet = false;
     int x = 0;
@@ -22,12 +29,22 @@ public class ghost implements KeyListener, ActionListener {
     boolean edible = false;
     int turning = -1;
     boolean movingSet = false;
+    int speed = 13;
+    int tempspeed = 13;
 
     Image[] ghostImage = new Image[12];
 
-    public ghost(int speed) {
-        t = new Timer(speed, this); //speed of the ghost the higher the slower
+    public ghost(Socket socketio) {
+        socket = socketio;
+        t = new Timer(speed, this);
         t.start();
+
+        try{
+            BasicExample();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         try {
             ghostImage[0] = ImageIO.read(getClass().getResource("/res/ghost/ghost1.png"));
             ghostImage[1] = ImageIO.read(getClass().getResource("/res/ghost/ghost1-2.png"));
@@ -46,7 +63,6 @@ public class ghost implements KeyListener, ActionListener {
         }
         ActionListener ghCurImg = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                System.out.println(edible);
                 if(!gotBall && !edible) {
                     if(currGh % 2 != 0) currGh=0;
                     if(currGh == 0) currGhIncrement = 2;
@@ -99,6 +115,12 @@ public class ghost implements KeyListener, ActionListener {
     public void actionPerformed(ActionEvent e) {
         x += velX;
         y += velY;
+        if(speed != tempspeed){
+            t.stop();
+            t = new Timer(speed, this);
+            t.start();
+            tempspeed = speed;
+        }
     }
 
     public void up(){
@@ -130,22 +152,70 @@ public class ghost implements KeyListener, ActionListener {
         if(keycode == KeyEvent.VK_UP){
             if(movingSet) turning=0;
             else up();
+            socket.emit("ghup", x, y, velX, velY, turning);
             movingSet = true;
         }
         if(keycode == KeyEvent.VK_DOWN){
             if(movingSet) turning=1;
             else down();
+            socket.emit("ghdown", x, y, velX, velY, turning);
             movingSet = true;
         }
         if(keycode == KeyEvent.VK_LEFT){
             if(movingSet)turning=2;
             else left();
+            socket.emit("ghleft", x, y, velX, velY, turning);
             movingSet = true;
         }
         if(keycode == KeyEvent.VK_RIGHT){
             if(movingSet)turning=3;
             else right();
+            socket.emit("ghright", x, y, velX, velY, turning);
             movingSet = true;
         }
+    }
+
+
+    public void BasicExample(){
+        socket.on("ghup", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
+        socket.on("ghdown", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
+        socket.on("ghleft", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
+        socket.on("ghright", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
     }
 }

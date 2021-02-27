@@ -1,4 +1,10 @@
+//Kamil Michalski
+//18469806
 package PacChasers;
+
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -10,6 +16,7 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 
 public class pacman implements KeyListener, ActionListener {
+    private Socket socket;
     Timer t = new Timer(10, this); //speed of the pacman the higher the slower
     boolean positionSet = false;
     int x = 0;
@@ -24,8 +31,16 @@ public class pacman implements KeyListener, ActionListener {
 
     Image[] pacImage = new Image[6];
 
-    public pacman() {
+    public pacman(Socket socketio) {
+        socket = socketio;
         t.start();
+
+        try{
+            BasicExample();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         try {
             pacImage[0] = ImageIO.read(this.getClass().getResource("/res/pacman/pac1.png"));
             pacImage[1] = ImageIO.read(this.getClass().getResource("/res/pacman/pac2.png"));
@@ -107,23 +122,70 @@ public class pacman implements KeyListener, ActionListener {
         if(keycode == KeyEvent.VK_W){
             if(movingSet) turning=0;
             else up();
+            socket.emit("pup",x, y, velX, velY, turning);
             movingSet = true;
 
         }
         if(keycode == KeyEvent.VK_S){
             if(movingSet) turning=1;
             else down();
+            socket.emit("pdown", x, y, velX, velY, turning);
             movingSet = true;
         }
         if(keycode == KeyEvent.VK_A){
             if(movingSet)turning=2;
             else left();
+            socket.emit("pleft", x, y, velX, velY, turning);
             movingSet = true;
         }
         if(keycode == KeyEvent.VK_D){
             if(movingSet)turning=3;
             else right();
+            socket.emit("pright", x, y, velX, velY, turning);
             movingSet = true;
         }
+    }
+
+    public void BasicExample(){
+        socket.on("pup", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
+        socket.on("pdown", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
+        socket.on("pleft", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
+        socket.on("pright", new Emitter.Listener() {
+            @Override //x, y, velX, velY, turning
+            public void call(Object... args) {
+                    x = (int) args[0];
+                    y = (int) args[1];
+                    velX = (int) args[2];
+                    velY = (int) args[3];
+                    turning = (int) args[4];
+            }
+        });
     }
 }
