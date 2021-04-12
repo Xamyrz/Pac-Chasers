@@ -563,8 +563,7 @@ public class MapSetup extends JPanel {
         }
     }
     public void BasicExample() throws Exception {
-        socket = IO.socket("https://pacchaser-server.herokuapp.com");
-        //socket = IO.socket("http://localhost:2731");
+        socket = IO.socket("http://localhost:2731");
         socket.connect();
     }
 }
